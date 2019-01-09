@@ -1,6 +1,12 @@
 <template>
   <div class="calculator">
-    <div class="calculator-display" v-text="displayValue"></div>
+    <div
+      class="calculator-display"
+      v-text="displayValue"
+      v-bind:style="[
+        shrinkingText ? { 'font-size': '3em' } : { 'font-size': '6em' }
+      ]"
+    ></div>
     <div class="calculator-keypad">
       <div class="input-keys">
         <div class="function-keys">
@@ -8,13 +14,18 @@
             AC
           </button>
           <button class="calculator-key key-sign" v-on:click="toggleSign">
-            ±
+            +/-
           </button>
-          <button class="calculator-key key-percent">%</button>
+          <button
+            class="calculator-key key-percent"
+            v-on:click="performPercentage"
+          >
+            %
+          </button>
         </div>
         <div class="digit-keys">
           <button class="calculator-key key-0" @click="calculate(0);">0</button>
-          <button class="calculator-key key-dot" @click="calculate('.');">
+          <button class="calculator-key key-dot" @click="inputDot('.');">
             .
           </button>
           <button class="calculator-key key-1" @click="calculate(1);">1</button>
@@ -39,7 +50,7 @@
           class="calculator-key key-multiply"
           @click="performOperation('*');"
         >
-          *
+          x
         </button>
         <button
           class="calculator-key key-minus"
@@ -69,7 +80,8 @@ export default {
       displayValue: 0,
       isOperand: false,
       operator: null,
-      preValue: null
+      preValue: null,
+      shrinkingText: false
     };
   },
   methods: {
@@ -82,9 +94,12 @@ export default {
     toggleSign() {
       this.displayValue = this.displayValue * -1;
     },
+    inputDot() {
+      if (this.displayValue.indexOf(".") === -1) {
+        this.displayValue += ".";
+      }
+    },
     calculate(input) {
-      console.log(input);
-
       if (this.isOperand) {
         this.displayValue = String(input);
         this.isOperand = false;
@@ -96,19 +111,20 @@ export default {
       }
     },
     performOperation(operator) {
+      this.isOperand = true;
+
       const operations = {
         "/": (preValue, nextValue) => preValue / nextValue,
         "*": (preValue, nextValue) => preValue * nextValue,
         "-": (preValue, nextValue) => preValue - nextValue,
-        "+": (preValue, nextValue) => parseInt(preValue) + parseInt(nextValue),
-        "=": (preValue, nextValue) => preValue
+        "+": (preValue, nextValue) =>
+          parseFloat(preValue) + parseFloat(nextValue),
+        "=": (preValue, nextValue) => nextValue
       };
-      this.isOperand = true; // to enter another values
-      // to save operators
       if (this.preValue === null) {
-        this.preValue = this.displayValue; // store display value to prev value for operation
+        this.preValue = this.displayValue;
       } else {
-        const computedValue = operations[operator](
+        const computedValue = operations[this.operator](
           this.preValue,
           this.displayValue
         );
@@ -116,6 +132,20 @@ export default {
         this.displayValue = String(computedValue);
       }
       this.operator = operator;
+    },
+    performPercentage: function() {
+      this.displayValue = this.displayValue / 100;
+      return this.displayValue;
+    }
+  },
+  watch: {
+    displayValue: function() {
+      console.log(this.displayValue.length);
+      if (this.displayValue.length > 6) {
+        this.shrinkingText = true;
+      } else {
+        this.shrinkingText = false;
+      }
     }
   }
 };
